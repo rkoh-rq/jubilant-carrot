@@ -51,7 +51,7 @@ if __name__ == "__main__":
     if args.cuda:
         model.cuda()
 
-    for epoch in range(args.epoch):
+    for epoch in range(args.epochs):
         t = time.time()
         model.train()
         optimizer.zero_grad()
