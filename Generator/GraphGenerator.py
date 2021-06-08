@@ -100,7 +100,7 @@ class GraphGenerator():
         while Q and G.number_of_nodes() < 50:
             node_name, node_type = Q.popleft()
             if node_name not in G._node:
-                if node_type == 1:
+                if node_type == 1 and bytes(node_name, 'utf-8') in self.image_features_index.keys():
                     features[G.number_of_nodes(), :] = self.image_features[self.image_features_index[bytes(node_name, 'utf-8')]].todense()
                 G.add_node(node_name)
 
