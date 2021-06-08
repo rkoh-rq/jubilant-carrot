@@ -41,7 +41,7 @@ if __name__ == "__main__":
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
 
-    model = GCN(nfeat=4096,
+    model = GCN.GCN(nfeat=4096,
                 nclass=2,
                 dropout=args.dropout)
 
