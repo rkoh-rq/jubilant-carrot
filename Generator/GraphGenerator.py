@@ -101,7 +101,7 @@ class GraphGenerator():
             node_name, node_type = Q.popleft()
             if node_name not in G._node:
                 if node_type == 1:
-                    features[G.number_of_nodes(), :] = self.image_features[self.image_features_index[node_name]]
+                    features[G.number_of_nodes(), :] = self.image_features[self.image_features_index[bytes(node_name)]]
                 G.add_node(node_name)
 
             if node_type == 0: # User
