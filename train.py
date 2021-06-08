@@ -36,7 +36,6 @@ if __name__ == "__main__":
 
     np.random.seed(args.seed)
     graph_generator = GraphGenerator(args.category)
-    idx_train, idx_val, idx_test = train_val_test_split(len(data_generator))
 
     torch.manual_seed(args.seed)
     if args.cuda:
