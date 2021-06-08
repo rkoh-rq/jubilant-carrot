@@ -91,7 +91,7 @@ class GraphGenerator():
         Return a adjacency matrix and feature matrix of graph surrounding the user
         '''
         user = self.ratings_df_index_i[user_idx]
-        features = zeros(50, 4096)
+        features = zeros((50, 4096))
         G = nx.Graph()
         Q = deque()
         Q.append((user, 0)) # 0 for user
