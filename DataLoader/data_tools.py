@@ -12,17 +12,6 @@ def add_to_queue_or_graph(Q, G, source, to_add, indicator):
     for t in to_add:
       add_to_queue_or_graph(Q, G, source, t, indicator)
 
-def related_convert_to_list(x):
-  r = set([])
-  if x.isna()['related']:
-    return r
-  else:
-    x = x['related']
-    for key in x:
-      for item in x[key]:
-        r.add(item)
-    return r
-
 def parse(path):
   g = gzip.open(path, 'rb')
   for l in g:

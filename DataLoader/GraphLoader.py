@@ -1,5 +1,4 @@
 from collections import deque
-from tools import train_val_test_split
 from numpy import zeros, ones
 from numpy.random import shuffle
 import networkx as nx
@@ -8,8 +7,8 @@ from .data_tools import getDF, readImageFeatures, add_to_queue_or_graph, related
 from scipy.sparse import coo, coo_matrix
 import torch
 
-class GraphGenerator():
-    def __init__(self, category, batch_size=20, min_reviews=3):
+class GraphLoader():
+    def __init__(self, category, batch_size=64, min_reviews=5):
         self.batch_size = batch_size
 
         ratings_df = pd.read_csv('ratings_{}.csv'.format(category), header=None)
@@ -18,17 +17,15 @@ class GraphGenerator():
 
         self.ratings_df_reviewer = ratings_df.set_index(0)
         self.ratings_df_asin = ratings_df.set_index(1)
-        self.ratings_df_index = {id:i for i,id in enumerate(ratings_df[0])}
-        self.ratings_df_index_i = ratings_df[0]
+        self.ratings_df_index = {id:i for i,id in enumerate(self.ratings_df_reviewer.index)}
+        self.ratings_df_index_i = self.ratings_df_reviewer.index
 
         movies_ratings_df = pd.read_csv('ratings_Movies_and_TV.csv', header = None)
 
         # Generate labels
-        self.labels = zeros((len(self.ratings_df_index_i), 2))
-        self.labels[:, 0] = ones(len(self.ratings_df_index_i))
-        for user in set(ratings_df[0]).intersection(movies_ratings_df[0]):
-            self.labels[self.ratings_df_index[user]][1] = 1
-            self.labels[self.ratings_df_index[user]][0] = 0
+        self.labels = zeros(len(self.ratings_df_index_i))
+        for user in self.ratings_df_index_i.intersection(movies_ratings_df[0]):
+            self.labels[self.ratings_df_index[user]] = 1
 
         meta_df = getDF('meta_{}.json.gz'.format(category))
         meta_df = meta_df[['asin', 'related']]
@@ -41,9 +38,10 @@ class GraphGenerator():
         for feature in readImageFeatures('image_features_{}.b'.format(category)):
             self.image_features.append(coo_matrix(feature[1]))
             
-        self.idx_train, self.idx_val, self.idx_test = self.train_val_test_split(len(self.ratings_df_index.keys()))
+        self.idx_train, self.idx_val, self.idx_test = self.train_val_test_split(len(self.ratings_df_index_i))
             
         self.mode = 'train'
+        self.idx = self.idx_train
 
     def train_val_test_split(self, num_total, split_train=0.6, split_val=0.2):
         idx_list = [i for i in range(num_total)]
@@ -61,30 +59,22 @@ class GraphGenerator():
     def __iter__(self):
         if self.mode == 'train':
             shuffle(self.idx_train)
-            idx = self.idx_train
+            self.idx = self.idx_train
         elif self.mode == 'val':
-            idx = self.idx_val
+            self.idx = self.idx_val
         else:
-            idx = self.idx_test
+            self.idx = self.idx_test
         i = 0
-        for i in range(len(idx)):
-            if i % self.batch_size == 0:
-                adj_, feat_, label_ = self.get_graph_around_user(idx[i])
-                adj = adj_.unsqueeze(0)
-                feat = feat_.unsqueeze(0)
-                label = label_.unsqueeze(0)
-            else:
-                adj_, feat_, label_ = self.get_graph_around_user(idx[i])
-                adj = torch.vstack((adj, adj_))
-                feat = torch.vstack((feat, feat_))
-                label = torch.vstack((label, label_))
-            
-            if i % self.batch_size == self.batch_size - 1:
-                yield adj, feat, label
+        for i in range(len(self.idx)):
+            yield self.get_graph_around_user(self.idx[i])
 
     def __len__(self):
         # Number of users
         return len(self.ratings_df_index.keys())
+
+    def __len__(self):
+        # Number of users
+        return len(self.idx)
 
     def get_graph_around_user(self, user_idx):
         '''
@@ -117,14 +107,7 @@ class GraphGenerator():
                     users = self.ratings_df_asin.loc[node_name][0]
                     add_to_queue_or_graph(Q, G, node_name, users, 0)
 
-        return torch.Tensor(nx.linalg.graphmatrix.adjacency_matrix(G)), torch.Tensor(features), torch.Tensor(self.labels[user_idx])
-
-    def add_to_queue_or_graph(self, Q, G, source, to_add, indicator):
-        if isinstance(to_add, str):
-            if to_add not in G._node:
-                Q.append((to_add, indicator))
-            else:
-                G.add_edge(source, to_add)
-        else:
-            for t in to_add:
-                add_to_queue_or_graph(Q, G, source, t, indicator)
+        adj = nx.linalg.graphmatrix.adjacency_matrix(G).todense()
+        adj_pad = zeros((50, 50))
+        adj_pad[:adj.shape[0], :adj.shape[1]] = adj
+        return torch.Tensor(adj_pad), torch.Tensor(features), torch.LongTensor([self.labels[user_idx]])
