@@ -54,13 +54,14 @@ class GCN(nn.Module):
 
         self.dropout = dropout
 
-        self.gc1 = GraphConvolution(nfeat, 1024)
-        self.gc2 = GraphConvolution(1024, 512)
-        self.gc3 = GraphConvolution(512, 256)
-        self.gc4 = GraphConvolution(256, 128)
-        self.gc5 = GraphConvolution(128, 64)
-        self.fc1 = nn.Linear(64, 32)
-        self.fc2 = nn.Linear(32, nclass)
+        self.gc1 = GraphConvolution(nfeat, 2048)
+        self.gc2 = GraphConvolution(2048, 1024)
+        self.gc3 = GraphConvolution(1024, 512)
+        self.gc4 = GraphConvolution(512, 256)
+        self.gc5 = GraphConvolution(256, 128)
+        self.fc1 = nn.Linear(128, 32)
+        self.fc1 = nn.Linear(32, 8)
+        self.fc3 = nn.Linear(8, nclass)
 
     def forward(self, x, adj):
 
@@ -95,6 +96,8 @@ class GCN(nn.Module):
 
         y = F.relu(self.fc1(y))
         y = F.dropout(y, self.dropout, training=self.training)
-        y = F.softmax(self.fc2(y), dim=0)
+        y = F.relu(self.fc2(y))
+        y = F.dropout(y, self.dropout, training=self.training)
+        y = F.softmax(self.fc3(y), dim=0)
 
         return y
