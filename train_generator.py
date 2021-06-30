@@ -40,7 +40,7 @@ def train_generator(epoch, g, max_gen_step):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Parameters for training')
-    parser.add_argument('--modelpath', type=str)
+    parser.add_argument('--modelpath', type=str, required=True)
     parser.add_argument('--epochs', type=int, default=100,
                         help='Number of epochs to train for (default: 100)')
     parser.add_argument('--lr', type=float, default=0.01)
