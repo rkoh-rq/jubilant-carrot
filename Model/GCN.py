@@ -46,21 +46,16 @@ class GraphConvolution(Module):
 
 class GCN(nn.Module):
     def __init__(self, nfeat, nclass, dropout):
-        """ 3 layers of GCNs with output dimensions equal to 32, 48, 64 respectively and average all node features """
-        """ Final classifier with 2 fully connected layers and hidden dimension set to 32 """
-        """ Activation function - ReLu (Mutag) """
 
         super(GCN, self).__init__()
 
         self.dropout = dropout
 
-        self.gc1 = GraphConvolution(nfeat, 2048)
-        self.gc2 = GraphConvolution(2048, 1024)
-        self.gc3 = GraphConvolution(1024, 512)
-        self.gc4 = GraphConvolution(512, 256)
-        self.gc5 = GraphConvolution(256, 128)
+        self.gc1 = GraphConvolution(nfeat, 512)
+        self.gc2 = GraphConvolution(512, 256)
+        self.gc3 = GraphConvolution(256, 128)
         self.fc1 = nn.Linear(128, 32)
-        self.fc1 = nn.Linear(32, 8)
+        self.fc2 = nn.Linear(32, 8)
         self.fc3 = nn.Linear(8, nclass)
 
     def forward(self, x, adj):
@@ -71,10 +66,6 @@ class GCN(nn.Module):
         x = F.dropout(x, self.dropout, training=self.training)
         x = F.relu(self.gc3(x, adj))
         x = F.dropout(x, self.dropout, training=self.training)
-        x = F.relu(self.gc4(x, adj))
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = F.relu(self.gc5(x, adj))
-
         # prev = 0
         # y = []
         # for idx in idx_map:
